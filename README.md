@@ -1,77 +1,91 @@
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(128),  -- предполагаем, что используется хеширование
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-import psycopg2
-
-def create_user_table():
-    conn = psycopg2.connect("dbname=test user=postgres password=secret")  # Замените на свои данные
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(50) UNIQUE NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password VARCHAR(128),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.commit()
-    cursor.close()
-    conn.close()
-def insert_user(username, email, password):
-    conn = psycopg2.connect("dbname=test user=postgres password=secret")
-    cursor = conn.cursor()
-    query = "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)"
-    cursor.execute(query, (username, email, password))
-    conn.commit()
-    cursor.close()
-    conn.close()
-def select_user(user_id):
-    conn = psycopg2.connect("dbname=test user=postgres password=secret")
-    cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE id = %s"
-    cursor.execute(query, (user_id,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    return user
-def update_user(user_id, username=None, email=None, password=None):
-    conn = psycopg2.connect("dbname=test user=postgres password=secret")
-    cursor = conn.cursor()
-    query = "UPDATE users SET "
-    updates = []
-    params = []
-
-    if username:
-        updates.append("username = %s")
-        params.append(username)
-    if email:
-        updates.append("email = %s")
-        params.append(email)
-    if password:
-        updates.append("password = %s")
-        params.append(password)
-
-    query += ", ".join(updates) + " WHERE id = %s"
-    params.append(user_id)
-
-    cursor.execute(query, tuple(params))
-    conn.commit()
-    cursor.close()
-    conn.close()
-def delete_user(user_id):
-    conn = psycopg2.connect("dbname=test user=postgres password=secret")
-    cursor = conn.cursor()
-    query = "DELETE FROM users WHERE id = %s"
-    cursor.execute(query, (user_id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-def prepare_query(operation, query_params):
-    # Здесь вы можете определить логику подготовки запроса
-    # в зависимости от ваших нужд.
-    pass
+import sqlite3 
+ 
+def init_db(): 
+        conn = sqlite3.connect('students.db') 
+        cursor = conn.cursor() 
+        cursor.execute(''' 
+            CREATE TABLE IF NOT EXISTS students ( 
+                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                fio TEXT UNIQUE NOT NULL, 
+               speciality TEXT NOT NULL 
+            ) 
+        ''') 
+        conn.commit() 
+        conn.close() 
+ 
+ 
+def insert_user(fio, speciality): 
+        conn = sqlite3.connect('students.db') 
+        cursor = conn.cursor() 
+        cursor.execute ('''INSERT INTO students (fio, speciality)  
+                        VALUES (?,?)''',(fio, speciality)) 
+ 
+        conn.commit() 
+        conn.close() 
+ 
+def update_user(id, fio, speciality): 
+    conn = sqlite3.connect('students.db') 
+    cursor = conn.cursor() 
+    cursor.execute(''' 
+        UPDATE students SET fio = ?, speciality = ? 
+        WHERE id = ? 
+    ''', (fio, speciality, id)) 
+    conn.commit() 
+    conn.close()  
+         
+def delete_user(id): 
+    conn = sqlite3.connect('students.db') 
+    cursor = conn.cursor()  
+    cursor.execute('DELETE FROM students WHERE id = ?', (id,)) 
+    conn.commit() 
+    conn.close() 
+ 
+def get_user_by_id(id): 
+    conn = sqlite3.connect('students.db') 
+    cursor = conn.cursor() 
+    cursor.execute('SELECT * FROM students WHERE id = ?', (id,)) 
+    user = cursor.fetchone()   
+    conn.close() 
+    return user 
+ 
+if name == '__main__': 
+    init_db() 
+     
+    while True: 
+        enter = input("Введите функцию для выполнения (update,delete,insert,get_user_by_id,break): ") 
+ 
+        if enter == "update": 
+ 
+            id = int(input("Введите id для обновления: ")) 
+            fio = input("Введите новое ФИО: ") 
+            speciality = input("Введите новую специальность: ") 
+            update_user(id, fio, speciality) 
+ 
+        elif enter == "delete": 
+ 
+            id = int(input("Введите id для удаления: ")) 
+            delete_user(id) 
+ 
+        elif enter == "insert": 
+ 
+            fio = input("Введите ФИО: ") 
+            speciality = input("Введите специальность: ") 
+            insert_user(fio, speciality) 
+ 
+        elif enter == "get_user_by_id": 
+ 
+            id = int(input("Введите id студента: ")) 
+            user_data = get_user_by_id(id) 
+            if user_data: 
+                print("Данные студента:") 
+                print(f"ID: {user_data[0]}") 
+                print(f"ФИО: {user_data[1]}") 
+                print(f"Специальность: {user_data[2]}") 
+            else: 
+                print(f"Студент с таким ID {id} не найден.") 
+        elif enter == "break": 
+            print("Работа программы заверщена.") 
+            break 
+ 
+        else: 
+            print("Некорректный ввод. Повторите.")
